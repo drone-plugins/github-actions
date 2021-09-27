@@ -1,0 +1,9 @@
+FROM docker:dind
+
+ENV DOCKER_HOST=unix:///var/run/docker.sock
+
+RUN apk add --no-cache ca-certificates curl bash
+RUN curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | bash -s v0.2.24
+
+ADD release/linux/amd64/plugin /bin/
+ENTRYPOINT ["/usr/local/bin/dockerd-entrypoint.sh", "/bin/plugin"]
