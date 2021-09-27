@@ -1,0 +1,22 @@
+kind: pipeline
+type: docker
+name: default
+
+steps:
+- name: build
+  image: golang
+  commands:
+  - go test ./...
+  - sh scripts/build.sh
+
+- name: publish
+  image: plugins/docker
+  pull: if-not-exists
+  settings:
+    repo: plugins/github-actions
+    auto_tag: true
+    dockerfile: docker/Dockerfile.linux.amd64
+    username:
+      from_secret: docker_username
+    password:
+      from_secret: docker_password
