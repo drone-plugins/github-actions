@@ -1,6 +1,6 @@
 # drone-github-action-plugin
 
-This plugins allows running github actions as a drone plugin
+This plugin allows running github actions as a drone plugin
 
 ## Build
 
