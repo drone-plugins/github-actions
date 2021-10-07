@@ -11,9 +11,13 @@ import (
 )
 
 const (
-	workflowFile = "/tmp/workflow.yml"
-	webhookFile  = "/tmp/webhook"
 	envFile      = "/tmp/action.env"
+	secretFile   = "/tmp/action.secrets"
+	workflowFile = "/tmp/workflow.yml"
+)
+
+var (
+	secrets = []string{"GITHUB_TOKEN"}
 )
 
 type (
@@ -42,11 +46,19 @@ func (p Plugin) Exec() error {
 		return err
 	}
 
+	if err := utils.CreateEnvAndSecretFile(envFile, secretFile, secrets); err != nil {
+		return err
+	}
+
 	cmdArgs := []string{
 		"-W",
 		workflowFile,
 		"-P",
 		fmt.Sprintf("ubuntu-latest=%s", p.Action.Image),
+		"--secret-file",
+		secretFile,
+		"--env-file",
+		envFile,
 		"-b",
 		"--detect-event",
 	}
