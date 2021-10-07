@@ -1,36 +1,34 @@
 package utils
 
 import (
-	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
+	"github.com/joho/godotenv"
 	"github.com/pkg/errors"
 )
 
 func CreateEnvAndSecretFile(envFile, secretFile string, secrets []string) error {
 	envVars := getEnvVars()
 
-	envBuf := ""
+	actionEnvVars := make(map[string]string)
 	for key, val := range envVars {
 		if !strings.HasPrefix(key, "PLUGIN_") && !Exists(secrets, key) {
-			envBuf += fmt.Sprintf("%s=%s\n", key, val)
+			actionEnvVars[key] = val
 		}
 	}
 
-	secretBuf := ""
+	secretEnvVars := make(map[string]string)
 	for _, secretName := range secrets {
 		if os.Getenv(secretName) != "" {
-			secretBuf += fmt.Sprintf("%s=%s\n", secretName, os.Getenv(secretName))
+			secretEnvVars[secretName] = os.Getenv(secretName)
 		}
 	}
 
-	if err := ioutil.WriteFile(envFile, []byte(envBuf), 0644); err != nil {
+	if err := godotenv.Write(actionEnvVars, envFile); err != nil {
 		return errors.Wrap(err, "failed to write environment variables file")
 	}
-
-	if err := ioutil.WriteFile(secretFile, []byte(secretBuf), 0644); err != nil {
+	if err := godotenv.Write(secretEnvVars, secretFile); err != nil {
 		return errors.Wrap(err, "failed to write secret variables file")
 	}
 	return nil
