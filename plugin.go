@@ -47,6 +47,7 @@ func (p Plugin) Exec() error {
 		workflowFile,
 		"-P",
 		fmt.Sprintf("ubuntu-latest=%s", p.Action.Image),
+		"-b",
 		"--detect-event",
 	}
 
