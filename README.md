@@ -30,7 +30,7 @@ docker build \
 
 ## Plugin step usage
 
-Provide uses, with & env of github action to use in plugin step settings.
+Provide uses, with & env of github action to use in plugin step settings. Provide GITHUB_TOKEN as environment variable if it is required for an action.
 
 ```console
 steps:
