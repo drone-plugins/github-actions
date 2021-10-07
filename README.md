@@ -53,7 +53,8 @@ steps:
 
  docker run --rm \
     --privileged \
-     -w /drone \
+    -v $(pwd):/drone \
+    -w /drone \
     -e PLUGIN_USES="actions/hello-world-javascript-action@v1.1" \
     -e PLUGIN_WITH="{\"who-to-greet\":\"Mona the Octocat\"}" \
     -e PLUGIN_VERBOSE=true \
