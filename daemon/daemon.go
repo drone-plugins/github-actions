@@ -12,7 +12,7 @@ type Daemon struct {
 	Insecure      bool     // Docker daemon enable insecure registries
 	StorageDriver string   // Docker daemon storage driver
 	StoragePath   string   // Docker daemon storage path
-	Disabled      bool     // DOcker daemon is disabled (already running)
+	Disabled      bool     // Docker daemon is disabled (already running)
 	Debug         bool     // Docker daemon started in debug mode
 	Bip           string   // Docker daemon network bridge IP address
 	DNS           []string // Docker daemon dns server
@@ -23,7 +23,9 @@ type Daemon struct {
 }
 
 func StartDaemon(d Daemon) error {
-	startDaemon(d)
+	if !d.Disabled {
+		startDaemon(d)
+	}
 	return waitForDaemon()
 }
 

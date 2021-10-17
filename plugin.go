@@ -2,18 +2,21 @@ package plugin
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
 
 	"github.com/drone-plugins/drone-github-actions/daemon"
 	"github.com/drone-plugins/drone-github-actions/utils"
+	"github.com/pkg/errors"
 )
 
 const (
-	envFile      = "/tmp/action.env"
-	secretFile   = "/tmp/action.secrets"
-	workflowFile = "/tmp/workflow.yml"
+	envFile          = "/tmp/action.env"
+	secretFile       = "/tmp/action.secrets"
+	workflowFile     = "/tmp/workflow.yml"
+	eventPayloadFile = "/tmp/event.json"
 )
 
 var (
@@ -22,11 +25,12 @@ var (
 
 type (
 	Action struct {
-		Uses    string
-		With    map[string]string
-		Env     map[string]string
-		Image   string
-		Verbose bool
+		Uses         string
+		With         map[string]string
+		Env          map[string]string
+		Image        string
+		EventPayload string // Webhook event payload
+		Verbose      bool
 	}
 
 	Plugin struct {
@@ -61,6 +65,14 @@ func (p Plugin) Exec() error {
 		envFile,
 		"-b",
 		"--detect-event",
+	}
+
+	if p.Action.EventPayload != "" {
+		if err := ioutil.WriteFile(eventPayloadFile, []byte(p.Action.EventPayload), 0644); err != nil {
+			return errors.Wrap(err, "failed to write event payload to file")
+		}
+
+		cmdArgs = append(cmdArgs, "--eventpath", eventPayloadFile)
 	}
 
 	if p.Action.Verbose {
