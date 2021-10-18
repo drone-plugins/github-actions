@@ -6,6 +6,7 @@ import (
 
 	plugin "github.com/drone-plugins/drone-github-actions"
 	"github.com/drone-plugins/drone-github-actions/daemon"
+	"github.com/drone-plugins/drone-github-actions/pkg/encoder"
 	"github.com/joho/godotenv"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -74,6 +75,11 @@ func main() {
 			Usage:  "Image to use for running github actions",
 			Value:  "node:12-buster-slim",
 			EnvVar: "PLUGIN_ACTION_IMAGE",
+		},
+		cli.StringFlag{
+			Name:   "event-payload",
+			Usage:  "Webhook event payload",
+			EnvVar: "PLUGIN_EVENT_PAYLOAD",
 		},
 
 		// daemon flags
@@ -167,11 +173,12 @@ func run(c *cli.Context) error {
 
 	plugin := plugin.Plugin{
 		Action: plugin.Action{
-			Uses:    c.String("action-name"),
-			With:    actionWith,
-			Env:     actionEnv,
-			Verbose: c.Bool("action-verbose"),
-			Image:   c.String("action-image"),
+			Uses:         c.String("action-name"),
+			With:         actionWith,
+			Env:          actionEnv,
+			Verbose:      c.Bool("action-verbose"),
+			Image:        c.String("action-image"),
+			EventPayload: c.String("event-payload"),
 		},
 		Daemon: daemon.Daemon{
 			Registry:      c.String("docker.registry"),
@@ -199,7 +206,14 @@ func strToMap(s string) (map[string]string, error) {
 	}
 
 	if err := json.Unmarshal([]byte(s), &m); err != nil {
-		return nil, err
+		m1 := make(map[string]interface{})
+		if e := json.Unmarshal([]byte(s), &m1); e != nil {
+			return nil, e
+		}
+
+		for k, v := range m1 {
+			m[k] = encoder.Encode(v)
+		}
 	}
 	return m, nil
 }
