@@ -21,8 +21,9 @@ steps:
   settings:
     dry_run: true
     repo: plugins/github-actions
-    auto_tag: true
     dockerfile: docker/Dockerfile.linux.amd64
+    tags:
+    - latest
 
 - name: publish
   image: plugins/docker
