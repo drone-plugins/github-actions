@@ -30,6 +30,7 @@ type (
 		Env          map[string]string
 		Image        string
 		EventPayload string // Webhook event payload
+		Actor        string
 		Verbose      bool
 	}
 
@@ -63,6 +64,8 @@ func (p Plugin) Exec() error {
 		secretFile,
 		"--env-file",
 		envFile,
+		"--actor",
+		p.Action.Actor,
 		"-b",
 		"--detect-event",
 	}

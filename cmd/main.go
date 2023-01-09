@@ -81,6 +81,11 @@ func main() {
 			Usage:  "Webhook event payload",
 			EnvVar: "PLUGIN_EVENT_PAYLOAD",
 		},
+		cli.StringFlag{
+			Name:   "actor",
+			Usage:  "User that triggered the event",
+			EnvVar: "PLUGIN_ACTOR",
+		},
 
 		// daemon flags
 		cli.StringFlag{
@@ -179,6 +184,7 @@ func run(c *cli.Context) error {
 			Verbose:      c.Bool("action-verbose"),
 			Image:        c.String("action-image"),
 			EventPayload: c.String("event-payload"),
+			Actor:        c.String("actor"),
 		},
 		Daemon: daemon.Daemon{
 			Registry:      c.String("docker.registry"),
