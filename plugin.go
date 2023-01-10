@@ -64,10 +64,14 @@ func (p Plugin) Exec() error {
 		secretFile,
 		"--env-file",
 		envFile,
-		"--actor",
-		p.Action.Actor,
 		"-b",
 		"--detect-event",
+	}
+
+	// optional arguments
+	if p.Action.Actor != "" {
+		cmdArgs = append(cmdArgs, "--actor")
+		cmdArgs = append(cmdArgs, p.Action.Actor)
 	}
 
 	if p.Action.EventPayload != "" {
