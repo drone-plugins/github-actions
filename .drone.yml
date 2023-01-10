@@ -15,16 +15,6 @@ steps:
   - go test ./...
   - sh scripts/build.sh
 
-- name: publish (dry run)
-  image: plugins/docker
-  pull: if-not-exists
-  settings:
-    dry_run: true
-    repo: plugins/github-actions
-    dockerfile: docker/Dockerfile.linux.amd64
-    tags:
-    - latest
-
 - name: publish
   image: plugins/docker
   pull: if-not-exists
