@@ -73,7 +73,7 @@ func main() {
 		cli.StringFlag{
 			Name:   "action-image",
 			Usage:  "Image to use for running github actions",
-			Value:  "node:12-buster-slim",
+			Value:  "node:16-buster-slim",
 			EnvVar: "PLUGIN_ACTION_IMAGE",
 		},
 		cli.StringFlag{
