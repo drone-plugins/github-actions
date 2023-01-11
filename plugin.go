@@ -30,6 +30,7 @@ type (
 		Env          map[string]string
 		Image        string
 		EventPayload string // Webhook event payload
+		Actor        string
 		Verbose      bool
 	}
 
@@ -65,6 +66,12 @@ func (p Plugin) Exec() error {
 		envFile,
 		"-b",
 		"--detect-event",
+	}
+
+	// optional arguments
+	if p.Action.Actor != "" {
+		cmdArgs = append(cmdArgs, "--actor")
+		cmdArgs = append(cmdArgs, p.Action.Actor)
 	}
 
 	if p.Action.EventPayload != "" {
