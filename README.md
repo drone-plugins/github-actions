@@ -47,7 +47,8 @@ steps:
 
 ## Running locally
 
-1. Running actions/hello-world-javascript-action action locally via docker:
+1. If you are running it on mac locally & /var/run/docker.sock file does not exist, first run this command `ln -s ~/.docker/run/docker.sock /var/run/docker.sock`
+2. Running actions/hello-world-javascript-action action locally via docker:
 
 ```console
 
