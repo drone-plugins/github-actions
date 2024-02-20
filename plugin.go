@@ -2,7 +2,6 @@ package plugin
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
@@ -75,7 +74,7 @@ func (p Plugin) Exec() error {
 	}
 
 	if p.Action.EventPayload != "" {
-		if err := ioutil.WriteFile(eventPayloadFile, []byte(p.Action.EventPayload), 0644); err != nil {
+		if err := os.WriteFile(eventPayloadFile, []byte(p.Action.EventPayload), 0644); err != nil {
 			return errors.Wrap(err, "failed to write event payload to file")
 		}
 

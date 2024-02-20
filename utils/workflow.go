@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"io/ioutil"
 	"os"
 
 	"github.com/pkg/errors"
@@ -59,7 +58,7 @@ func CreateWorkflowFile(ymlFile string, action string,
 		return errors.Wrap(err, "failed to create action workflow yml")
 	}
 
-	if err = ioutil.WriteFile(ymlFile, out, 0644); err != nil {
+	if err = os.WriteFile(ymlFile, out, 0644); err != nil {
 		return errors.Wrap(err, "failed to write yml workflow file")
 	}
 
