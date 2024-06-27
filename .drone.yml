@@ -29,6 +29,6 @@ steps:
     auto_tag_suffix: linux-amd64
 trigger:
   ref:
-    - refs/heads/master
+    - refs/heads/main
     - refs/tags/**
     - refs/pull/**
