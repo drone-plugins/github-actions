@@ -20,12 +20,15 @@ steps:
   pull: if-not-exists
   settings:
     repo: plugins/github-actions
-    auto_tag: true
     dockerfile: docker/Dockerfile.linux.amd64
     username:
       from_secret: docker_username
     password:
       from_secret: docker_password
-  when:
-    event:
-    - tag
+    auto_tag: true
+    auto_tag_suffix: linux-amd64
+trigger:
+  ref:
+    - refs/heads/master
+    - refs/tags/**
+    - refs/pull/**
