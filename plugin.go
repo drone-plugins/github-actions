@@ -46,7 +46,7 @@ func (p Plugin) Exec() error {
 	if err := daemon.StartDaemon(p.Daemon); err != nil {
 		return err
 	}
-	log.Println(p.Daemon.StoragePath)
+	log.Println(p.Action.Uses)
 	outputVar := utils.GetOutputVars("/tmp",p.Action.Uses)
 	log.Println(outputVar)
 	name := p.Action.Uses
