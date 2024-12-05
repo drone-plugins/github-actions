@@ -46,8 +46,8 @@ func (p Plugin) Exec() error {
 	if err := daemon.StartDaemon(p.Daemon); err != nil {
 		return err
 	}
-
-	outputVar := utils.GetOutputVars("/harness",p.Action.Uses)
+	log.Println(p.Daemon.StoragePath)
+	outputVar := utils.GetOutputVars(p.Daemon.StoragePath,p.Action.Uses)
 	log.Println(outputVar)
 	name := p.Action.Uses
 	if err := utils.CreateWorkflowFile(workflowFile, name,
