@@ -17,6 +17,7 @@ const (
 	secretFile       = "/tmp/action.secrets"
 	workflowFile     = "/tmp/workflow.yml"
 	eventPayloadFile = "/tmp/event.json"
+	outputFile       = "/tmp/action.yml"
 )
 
 var (
@@ -46,8 +47,10 @@ func (p Plugin) Exec() error {
 		return err
 	}
 
+	outputVar := utils.GetOutputVars()
+	fmt.Println(outputVar)
 	if err := utils.CreateWorkflowFile(workflowFile, p.Action.Uses,
-		p.Action.With, p.Action.Env); err != nil {
+		p.Action.With, p.Action.Env, outputFile, outputVar); err != nil {
 		return err
 	}
 
