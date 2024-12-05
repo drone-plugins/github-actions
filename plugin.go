@@ -47,7 +47,7 @@ func (p Plugin) Exec() error {
 		return err
 	}
 	log.Println(p.Action.Uses)
-	outputVar := utils.GetOutputVars("/tmp",p.Action.Uses)
+	outputVar := utils.GetOutputVars("/root/.cache/act",p.Action.Uses)
 	log.Println(outputVar)
 	name := p.Action.Uses
 	if err := utils.CreateWorkflowFile(workflowFile, name,
