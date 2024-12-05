@@ -6,10 +6,10 @@
 package utils
 
 import (
-	// "fmt"
+	"fmt"
 	"os"
 	"path/filepath"
-	// "regexp"
+	"regexp"
 )
 
 // Is returns true if the root path is a Harness
@@ -26,26 +26,26 @@ func Is(root string) bool {
 	return false
 }
 
-// func getActionYamlFname(root string) string {
-// 	if _, err := os.Stat(filepath.Join(root, "action.yml")); err == nil {
-// 		return filepath.Join(root, "action.yml")
-// 	}
-// 	if _, err := os.Stat(filepath.Join(root, "action.yaml")); err == nil {
-// 		return filepath.Join(root, "action.yaml")
-// 	}
-// 	return ""
-// }
+func getActionYamlFname(root string) string {
+	if _, err := os.Stat(filepath.Join(root, "action.yml")); err == nil {
+		return filepath.Join(root, "action.yml")
+	}
+	if _, err := os.Stat(filepath.Join(root, "action.yaml")); err == nil {
+		return filepath.Join(root, "action.yaml")
+	}
+	return ""
+}
 
-// func parseActionName(action string) (org, repo, path, ref string, err error) {
-// 	r := regexp.MustCompile(`^([^/@]+)/([^/@]+)(/([^@]*))?(@(.*))?$`)
-// 	matches := r.FindStringSubmatch(action)
-// 	if len(matches) < 7 || matches[6] == "" {
-// 		err = fmt.Errorf("invalid action name: %s", action)
-// 		return
-// 	}
-// 	org = matches[1]
-// 	repo = matches[2]
-// 	path = matches[4]
-// 	ref = matches[6]
-// 	return
-// }
+func parseActionName(action string) (org, repo, path, ref string, err error) {
+	r := regexp.MustCompile(`^([^/@]+)/([^/@]+)(/([^@]*))?(@(.*))?$`)
+	matches := r.FindStringSubmatch(action)
+	if len(matches) < 7 || matches[6] == "" {
+		err = fmt.Errorf("invalid action name: %s", action)
+		return
+	}
+	org = matches[1]
+	repo = matches[2]
+	path = matches[4]
+	ref = matches[6]
+	return
+}

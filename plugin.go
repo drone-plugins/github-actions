@@ -6,7 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-
+	"log"
 	"github.com/drone-plugins/drone-github-actions/daemon"
 	"github.com/drone-plugins/drone-github-actions/utils"
 	"github.com/pkg/errors"
@@ -47,9 +47,10 @@ func (p Plugin) Exec() error {
 		return err
 	}
 
-	outputVar := utils.GetOutputVars()
-	fmt.Println(outputVar)
-	if err := utils.CreateWorkflowFile(workflowFile, p.Action.Uses,
+	outputVar := utils.GetOutputVars("/harness",p.Action.Uses)
+	log.Println(outputVar)
+	name := p.Action.Uses
+	if err := utils.CreateWorkflowFile(workflowFile, name,
 		p.Action.With, p.Action.Env, outputFile, outputVar); err != nil {
 		return err
 	}
@@ -67,6 +68,8 @@ func (p Plugin) Exec() error {
 		secretFile,
 		"--env-file",
 		envFile,
+		// "--output-file",
+		// outputFile,
 		"-b",
 		"--detect-event",
 	}
