@@ -17,7 +17,6 @@ const (
 	secretFile       = "/tmp/action.secrets"
 	workflowFile     = "/tmp/workflow.yml"
 	eventPayloadFile = "/tmp/event.json"
-	outputFile       = "/tmp/action.yml"
 )
 
 var (
@@ -46,8 +45,15 @@ func (p Plugin) Exec() error {
 	if err := daemon.StartDaemon(p.Daemon); err != nil {
 		return err
 	}
-	log.Println(p.Action.Uses)
-	outputVar := utils.GetOutputVars("/root/.cache/act",p.Action.Uses)
+	repo, ref, ok := utils.ParseLookup(p.Action.Uses)
+	sha:=""
+		if !ok {
+			log.Println("failed to get repo and ref")
+		}
+	
+	log.Println(p.Action.Uses,repo,ref,sha)
+	outputFile := os.Getenv("DRONE_OUTPUT")
+	outputVar := utils.GetOutputVars("/harness",p.Action.Uses)
 	log.Println(outputVar)
 	name := p.Action.Uses
 	if err := utils.CreateWorkflowFile(workflowFile, name,
