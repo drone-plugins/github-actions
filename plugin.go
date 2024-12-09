@@ -2,14 +2,14 @@ package plugin
 
 import (
 	"fmt"
-	"io/ioutil"
-	"os"
-	"os/exec"
-	"strings"
-	"log"
 	"github.com/drone-plugins/drone-github-actions/daemon"
 	"github.com/drone-plugins/drone-github-actions/utils"
 	"github.com/pkg/errors"
+	"io/ioutil"
+	"log"
+	"os"
+	"os/exec"
+	"strings"
 )
 
 const (
@@ -17,6 +17,7 @@ const (
 	secretFile       = "/tmp/action.secrets"
 	workflowFile     = "/tmp/workflow.yml"
 	eventPayloadFile = "/tmp/event.json"
+	// outputFile       = "/tmp/output.env"
 )
 
 var (
@@ -46,14 +47,21 @@ func (p Plugin) Exec() error {
 		return err
 	}
 	repo, ref, ok := utils.ParseLookup(p.Action.Uses)
-	sha:=""
-		if !ok {
-			log.Println("failed to get repo and ref")
-		}
-	
-	log.Println(p.Action.Uses,repo,ref,sha)
+	sha := ""
+	if !ok {
+		log.Println("failed to get repo and ref")
+	}
+
+	log.Println(p.Action.Uses, repo, ref, sha)
 	outputFile := os.Getenv("DRONE_OUTPUT")
-	outputVar := utils.GetOutputVars("/harness",p.Action.Uses)
+	if _, err := os.Stat(outputFile); os.IsNotExist(err) {
+		_, err := os.OpenFile(outputFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+		if err != nil {
+			return fmt.Errorf("failed to create file: %w", err)
+		}
+	}
+
+	outputVar := utils.GetOutputVars("/harness", p.Action.Uses)
 	log.Println(outputVar)
 	name := p.Action.Uses
 	if err := utils.CreateWorkflowFile(workflowFile, name,
