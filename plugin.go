@@ -103,6 +103,8 @@ if err1 != nil {
 		// outputFile,
 		"-b",
 		"--detect-event",
+		"-v",
+		"/tmp/engine:/tmp/engine",
 	}
 
 	// optional arguments
