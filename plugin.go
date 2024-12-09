@@ -60,9 +60,18 @@ func (p Plugin) Exec() error {
 			return fmt.Errorf("failed to create file: %w", err)
 		}
 	}
+	data := `commit_sha=abc123def456
+build_number=42
+artifact_url=https://example.com/artifacts/42
+status=success`
+
+err := os.WriteFile(outputFile, []byte(data), 0644)
+if err != nil {
+    log.Fatalf("Failed to write to output file: %v", err)
+}
 
 	outputVar := utils.GetOutputVars("/harness", p.Action.Uses)
-	log.Println(outputVar)
+	log.Printf("Output Variables: %v\n", outputVar)
 	name := p.Action.Uses
 	if err := utils.CreateWorkflowFile(workflowFile, name,
 		p.Action.With, p.Action.Env, outputFile, outputVar); err != nil {
