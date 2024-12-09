@@ -103,8 +103,8 @@ if err1 != nil {
 		// outputFile,
 		"-b",
 		"--detect-event",
-		"--eventpath",
-		outputFile,
+		// "--eventpath",
+		// outputFile,
 		"-v",
 	}
 
