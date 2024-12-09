@@ -65,9 +65,9 @@ build_number=42
 artifact_url=https://example.com/artifacts/42
 status=success`
 
-err := os.WriteFile(outputFile, []byte(data), 0644)
-if err != nil {
-    log.Fatalf("Failed to write to output file: %v", err)
+err1 := os.WriteFile(outputFile, []byte(data), 0644)
+if err1 != nil {
+    log.Fatalf("Failed to write to output file: %v", err1)
 }
 
 	outputVar := utils.GetOutputVars("/harness", p.Action.Uses)
