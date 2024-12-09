@@ -69,6 +69,14 @@ err1 := os.WriteFile(outputFile, []byte(data), 0644)
 if err1 != nil {
     log.Fatalf("Failed to write to output file: %v", err1)
 }
+	log.Println(outputFile)
+	content, err3 := os.ReadFile(outputFile)
+	if err3 != nil {
+		log.Fatalf("Failed to read the file: %v", err3)
+	}
+
+	fmt.Println("File contents:")
+	fmt.Println(string(content))
 
 	outputVar := utils.GetOutputVars("/harness", p.Action.Uses)
 	log.Printf("Output Variables: %v\n", outputVar)
