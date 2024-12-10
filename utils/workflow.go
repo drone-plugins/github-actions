@@ -87,6 +87,7 @@ func getOutputVariables(prevStepId, outputFile string, outputVars []string) step
 	cmd := ""
 	if !skip {
         // First, create the file using touch
+		cmd += fmt.Sprintf("echo $DRONE_OUTPUT\n")
         cmd += fmt.Sprintf("touch %s\n", outputFile)
         
         // Then write output variables to the file
