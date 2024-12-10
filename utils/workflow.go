@@ -83,37 +83,33 @@ func getWorkflowEvent() string {
 }
 
 func getOutputVariables(prevStepId, outputFile string, outputVars []string) step {
-	skip := len(outputFile) == 0 || len(outputVars) == 0
-	cmd := ""
-	if !skip {
-        // First, create the file using touch
-		cmd += fmt.Sprintf("echo $DRONE_OUTPUT\n")
-        cmd += fmt.Sprintf("touch %s\n", outputFile)
-        
-        // Then write output variables to the file
-        for _, outputVar := range outputVars {
-            cmd += fmt.Sprintf("echo '%s=${{ steps.%s.outputs.%s }}' >> %s\n", 
-                outputVar, prevStepId, outputVar, outputFile)
-        }
+    skip := len(outputFile) == 0 || len(outputVars) == 0
+    cmd := ""
+    for _, outputVar := range outputVars {
+        cmd += fmt.Sprintf("%s=${{ steps.%s.outputs.%s }}\n", outputVar, prevStepId, outputVar)
     }
 
-	if runtime.GOOS == "windows" {
-		cmd = fmt.Sprintf("python -c \"%s\"", outputVarWinScript(
-			outputVars, outputFile))
-	} else {
-		cmd = fmt.Sprintf("echo \"%s\" > %s", cmd, outputFile)
-	}
+    if runtime.GOOS == "windows" {
+        // Windows: Create the file and write the output variables using Python
+        cmd = fmt.Sprintf("python -c \"%s\"", outputVarWinScript(outputVars, outputFile))
+    } else {
+        // Unix-like: Use `touch` to create the file, then append the output variables
+        cmd = fmt.Sprintf("touch %s && echo \"%s\" > %s", outputFile, cmd, outputFile)
+    }
 
-	s := step{
-		Name: "output variables",
-		Run:  cmd,
-		If:   fmt.Sprintf("%t", !skip),
-	}
-	if runtime.GOOS == "windows" {
-		s.Shell = "powershell"
-	}
-	return s
+    s := step{
+        Name: "output variables",
+        Run:  cmd,
+        If:   fmt.Sprintf("%t", !skip),
+    }
+
+    if runtime.GOOS == "windows" {
+        s.Shell = "powershell"
+    }
+
+    return s
 }
+
 
 func outputVarWinScript(outputVars []string, outputFile string) string {
 	script := ""
