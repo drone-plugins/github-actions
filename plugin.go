@@ -63,6 +63,7 @@ func (p Plugin) Exec() error {
 	data := `commit_sha=abc123def456
 build_number=42
 artifact_url=https://example.com/artifacts/42
+time=
 status=success`
 
 err1 := os.WriteFile(outputFile, []byte(data), 0644)
