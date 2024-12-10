@@ -85,9 +85,16 @@ func getWorkflowEvent() string {
 func getOutputVariables(prevStepId, outputFile string, outputVars []string) step {
 	skip := len(outputFile) == 0 || len(outputVars) == 0
 	cmd := ""
-	for _, outputVar := range outputVars {
-		cmd += fmt.Sprintf("%s=${{ steps.%s.outputs.%s }}\n", outputVar, prevStepId, outputVar)
-	}
+	if !skip {
+        // First, create the file using touch
+        cmd += fmt.Sprintf("touch %s\n", outputFile)
+        
+        // Then write output variables to the file
+        for _, outputVar := range outputVars {
+            cmd += fmt.Sprintf("echo '%s=${{ steps.%s.outputs.%s }}' >> %s\n", 
+                outputVar, prevStepId, outputVar, outputFile)
+        }
+    }
 
 	if runtime.GOOS == "windows" {
 		cmd = fmt.Sprintf("python -c \"%s\"", outputVarWinScript(
