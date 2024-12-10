@@ -3,7 +3,7 @@ FROM docker:dind
 ENV DOCKER_HOST=unix:///var/run/docker.sock
 
 RUN apk add --no-cache ca-certificates curl
-RUN curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | sh -s v0.2.61
+RUN curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | sh -s v0.2.70
 
 ADD release/linux/amd64/plugin /bin/
 ENTRYPOINT ["/usr/local/bin/dockerd-entrypoint.sh", "/bin/plugin"]
