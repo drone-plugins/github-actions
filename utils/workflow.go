@@ -94,8 +94,7 @@ func getOutputVariables(prevStepId, outputFile string, outputVars []string) step
         cmd = fmt.Sprintf("python -c \"%s\"", outputVarWinScript(outputVars, outputFile))
     } else {
         // Unix-like: Use `touch` to create the file, then append the output variables
-        cmd = fmt.Sprintf("echo $DRONE_OUTPUT && mkdir -p $(dirname %s) && touch %s && echo \"%s\" > %s",
-            outputFile, outputFile, cmd, outputFile)
+        cmd = fmt.Sprintf("echo \"%s\" > %s",cmd, outputFile)
     }
 
     s := step{
