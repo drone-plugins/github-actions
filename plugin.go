@@ -100,6 +100,7 @@ if err1 != nil {
 		secretFile,
 		"--env-file",
 		envFile,
+		"-C",
 		// "--output-file",
 		// outputFile,
 		"-b",
