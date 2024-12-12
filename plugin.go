@@ -100,14 +100,14 @@ if err1 != nil {
 		"--env-file",
 		envFile,
 		"-C",
-		"/.",
+		"/tmp/engine",
 		// "--output-file",
 		// outputFile,
 		"-b",
-		"--detect-event",
+		// "--detect-event",
 		// "--eventpath",
 		// outputFile,
-		"-v",
+		// "-v",
 	}
 
 	// optional arguments
