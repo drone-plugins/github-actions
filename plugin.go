@@ -104,10 +104,11 @@ if err1 != nil {
 		// "--output-file",
 		// outputFile,
 		"-b",
+		"/plugin",
 		// "--detect-event",
 		// "--eventpath",
 		// outputFile,
-		// "-v",
+		"-v",
 	}
 
 	// optional arguments
