@@ -100,7 +100,7 @@ if err1 != nil {
 		"--env-file",
 		envFile,
 		"-C",
-		"/",
+		"/.",
 		// "--output-file",
 		// outputFile,
 		"-b",
