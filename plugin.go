@@ -64,7 +64,6 @@ func (p Plugin) Exec() error {
 build_number=42
 artifact_url=https://example.com/artifacts/42
 status=success`
-
 err1 := os.WriteFile(outputFile, []byte(data), 0644)
 if err1 != nil {
     log.Fatalf("Failed to write to output file: %v", err1)
@@ -100,11 +99,11 @@ if err1 != nil {
 		"--env-file",
 		envFile,
 		"-C",
-		"/tmp/engine",
+		"/home",
 		// "--output-file",
 		// outputFile,
 		"-b",
-		"/plugin",
+		// "/plugin",
 		// "--detect-event",
 		// "--eventpath",
 		// outputFile,
