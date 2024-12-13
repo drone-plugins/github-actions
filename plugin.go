@@ -99,7 +99,7 @@ if err1 != nil {
 		"--env-file",
 		envFile,
 		"-C",
-		"/harness",
+		"/tmp/engine",
 		// "--output-file",
 		// outputFile,
 		"-b",
