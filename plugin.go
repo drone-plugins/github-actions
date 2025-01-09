@@ -9,10 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/drone-plugins/drone-github-actions/cloner"
 	"github.com/drone-plugins/drone-github-actions/daemon"
 	"github.com/drone-plugins/drone-github-actions/utils"
-	"github.com/drone/plugin/cloner"
-	"github.com/drone/plugin/plugin/github"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -52,7 +51,7 @@ func (p Plugin) Exec() error {
 	}
 
 	ctx := context.Background()
-	repoURL, ref, ok := github.ParseLookup(p.Action.Uses)
+	repoURL, ref, ok := utils.ParseLookup(p.Action.Uses)
 	if !ok {
 		logrus.Warnf("Invalid 'uses' format: %s", p.Action.Uses)
 		return fmt.Errorf("invalid 'uses' format: %s", p.Action.Uses)
