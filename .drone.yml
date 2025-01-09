@@ -10,7 +10,7 @@ pool:
 
 steps:
 - name: build
-  image: golang:1.19
+  image: golang:1.22.7
   commands:
   - go test ./...
   - sh scripts/build.sh
