@@ -1,15 +1,19 @@
 package plugin
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
+	"github.com/drone-plugins/drone-github-actions/cloner"
 	"github.com/drone-plugins/drone-github-actions/daemon"
 	"github.com/drone-plugins/drone-github-actions/utils"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -46,14 +50,48 @@ func (p Plugin) Exec() error {
 		return err
 	}
 
+	ctx := context.Background()
+	repoURL, ref, ok := utils.ParseLookup(p.Action.Uses)
+	if !ok {
+		logrus.Warnf("Invalid 'uses' format: %s", p.Action.Uses)
+	}
+	logrus.Infof("Parsed 'uses' string. Repo: %s, Ref: %s", repoURL, ref)
+
+	// Clone the GH Action repository using `cloner` with parsed repo and ref
+	clone := cloner.NewCache(cloner.NewDefault())
+	codedir, cloneErr := clone.Clone(ctx, repoURL, ref, "")
+	if cloneErr != nil {
+		logrus.Warnf("Failed to clone GH Action: %v", cloneErr)
+	} else {
+		logrus.Infof("Successfully cloned GH Action to %s", codedir)
+	}
+
+	outputFile := os.Getenv("DRONE_OUTPUT")
+	outputVars := []string{}
+
+	if codedir != "" {
+		var err error
+		outputVars, err = utils.ParseActionOutputs(codedir)
+		if err != nil {
+			logrus.Warnf("Could not parse action.yml outputs from %s: %v", codedir, err)
+		}
+	}
+
+	if len(outputVars) == 0 {
+		logrus.Infof("No outputs were found in action.yml for repo: %s", repoURL)
+	}
+
 	if err := utils.CreateWorkflowFile(workflowFile, p.Action.Uses,
-		p.Action.With, p.Action.Env); err != nil {
+		p.Action.With, p.Action.Env, outputFile, outputVars); err != nil {
 		return err
 	}
 
 	if err := utils.CreateEnvAndSecretFile(envFile, secretFile, secrets); err != nil {
 		return err
 	}
+
+	outputFilePath := GetDirPath(outputFile)
+	containerOptions := fmt.Sprintf("-v=%s:%s", outputFilePath, outputFilePath)
 
 	cmdArgs := []string{
 		"-W",
@@ -66,6 +104,8 @@ func (p Plugin) Exec() error {
 		envFile,
 		"-b",
 		"--detect-event",
+		"--container-options",
+		fmt.Sprintf("\"%s\"", containerOptions),
 	}
 
 	// optional arguments
@@ -102,4 +142,8 @@ func (p Plugin) Exec() error {
 // tag so that it can be extracted and displayed in the logs.
 func trace(cmd *exec.Cmd) {
 	fmt.Fprintf(os.Stdout, "+ %s\n", strings.Join(cmd.Args, " "))
+}
+
+func GetDirPath(filePath string) string {
+	return filepath.Dir(filePath)
 }
