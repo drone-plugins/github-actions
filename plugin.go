@@ -2,14 +2,14 @@ package plugin
 
 import (
 	"fmt"
-	"io/ioutil"
-	"os"
-	"os/exec"
-	"strings"
-
 	"github.com/drone-plugins/drone-github-actions/daemon"
 	"github.com/drone-plugins/drone-github-actions/utils"
 	"github.com/pkg/errors"
+	"io/ioutil"
+	"log"
+	"os"
+	"os/exec"
+	"strings"
 )
 
 const (
@@ -17,6 +17,7 @@ const (
 	secretFile       = "/tmp/action.secrets"
 	workflowFile     = "/tmp/workflow.yml"
 	eventPayloadFile = "/tmp/event.json"
+	// outputFile       = "/tmp/output.env"
 )
 
 var (
@@ -45,9 +46,42 @@ func (p Plugin) Exec() error {
 	if err := daemon.StartDaemon(p.Daemon); err != nil {
 		return err
 	}
+	repo, ref, ok := utils.ParseLookup(p.Action.Uses)
+	sha := ""
+	if !ok {
+		log.Println("failed to get repo and ref")
+	}
 
-	if err := utils.CreateWorkflowFile(workflowFile, p.Action.Uses,
-		p.Action.With, p.Action.Env); err != nil {
+	log.Println(p.Action.Uses, repo, ref, sha)
+	outputFile := os.Getenv("DRONE_OUTPUT")
+	if _, err := os.Stat(outputFile); os.IsNotExist(err) {
+		_, err := os.OpenFile(outputFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+		if err != nil {
+			return fmt.Errorf("failed to create file: %w", err)
+		}
+	}
+	data := `commit_sha=abc123def456
+build_number=42
+artifact_url=https://example.com/artifacts/42
+status=success`
+err1 := os.WriteFile(outputFile, []byte(data), 0644)
+if err1 != nil {
+    log.Fatalf("Failed to write to output file: %v", err1)
+}
+	log.Println(outputFile)
+	content, err3 := os.ReadFile(outputFile)
+	if err3 != nil {
+		log.Fatalf("Failed to read the file: %v", err3)
+	}
+
+	fmt.Println("File contents:")
+	fmt.Println(string(content))
+
+	outputVar := utils.GetOutputVars("/harness", p.Action.Uses)
+	log.Printf("Output Variables: %v\n", outputVar)
+	name := p.Action.Uses
+	if err := utils.CreateWorkflowFile(workflowFile, name,
+		p.Action.With, p.Action.Env, outputFile, outputVar); err != nil {
 		return err
 	}
 
@@ -64,8 +98,16 @@ func (p Plugin) Exec() error {
 		secretFile,
 		"--env-file",
 		envFile,
+		"-C",
+		"/tmp/engine",
+		// "--output-file",
+		// outputFile,
 		"-b",
-		"--detect-event",
+		// "/plugin",
+		// "--detect-event",
+		// "--eventpath",
+		// outputFile,
+		"-v",
 	}
 
 	// optional arguments
