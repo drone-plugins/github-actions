@@ -54,7 +54,6 @@ func (p Plugin) Exec() error {
 	repoURL, ref, ok := utils.ParseLookup(p.Action.Uses)
 	if !ok {
 		logrus.Warnf("Invalid 'uses' format: %s", p.Action.Uses)
-		return fmt.Errorf("invalid 'uses' format: %s", p.Action.Uses)
 	}
 	logrus.Infof("Parsed 'uses' string. Repo: %s, Ref: %s", repoURL, ref)
 
