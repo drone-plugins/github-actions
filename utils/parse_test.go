@@ -16,7 +16,7 @@ func TestParseActionOutputs(t *testing.T) {
 outputs:
   var1:
     description: "A sample output variable"
-  var2:
+  var-2:
     description: "Another variable"`
 	err := os.WriteFile(filepath.Join(testDir, "action.yml"), []byte(validAction), 0644)
 	assert.NoError(t, err)
@@ -27,7 +27,7 @@ outputs:
 
 	outputs, err := ParseActionOutputs(testDir)
 	assert.NoError(t, err)
-	assert.ElementsMatch(t, outputs, []string{"var1", "var2"})
+	assert.ElementsMatch(t, outputs, []string{"var1", "var-2"})
 
 	// Invalid action.yml
 	invalidAction := `invalid_yaml`

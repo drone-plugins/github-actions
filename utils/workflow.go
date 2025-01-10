@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"runtime"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -95,32 +94,11 @@ func setOutputVariables(prevStepId, outputFile string, outputVars []string) step
 		cmd += fmt.Sprintf("%s=${{ steps.%s.outputs.%s }}\n", outputVar, prevStepId, outputVar)
 	}
 
-	if runtime.GOOS == "windows" {
-		cmd = fmt.Sprintf("python -c \"%s\"", outputVarWinScript(
-			outputVars, prevStepId, outputFile))
-	} else {
-		cmd = fmt.Sprintf("echo \"%s\" > %s", cmd, outputFile)
-	}
+	cmd = fmt.Sprintf("echo \"%s\" > %s", cmd, outputFile)
 
 	s := step{
 		Name: "output variables",
 		Run:  cmd,
 	}
-	if runtime.GOOS == "windows" {
-		s.Shell = "powershell"
-	}
 	return s
-}
-
-func outputVarWinScript(outputVars []string, prevStepId, outputFile string) string {
-	script := ""
-	for idx, outputVar := range outputVars {
-		prefix := "out = "
-		if idx > 0 {
-			prefix += "out + "
-		}
-		script += fmt.Sprintf("%s'%s=${{ steps.%s.outputs.%s }}\\n';", prefix, outputVar, prevStepId, outputVar)
-	}
-	script += fmt.Sprintf("f = open('%s', 'wb'); f.write(bytes(out, 'UTF-8')); f.close()", outputFile)
-	return script
 }
