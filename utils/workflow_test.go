@@ -40,7 +40,9 @@ func TestCreateWorkflowFile(t *testing.T) {
 	assert.NoError(t, err)
 	content, err = os.ReadFile(workflowFile)
 	assert.NoError(t, err)
-	assert.NotContains(t, string(content), "run: echo")
+	assert.Contains(t, string(content), "name: output variables")
+	assert.Contains(t, string(content), "run: echo \"\" >")
+	assert.Contains(t, string(content), "if: \"false\"")
 }
 
 func TestSetOutputVariables(t *testing.T) {
@@ -56,6 +58,7 @@ func TestSetOutputVariables(t *testing.T) {
 
 	// No output variables
 	step = setOutputVariables(prevStepId, outputFile, []string{})
-	assert.Empty(t, step.Name)
-	assert.Empty(t, step.Run)
+	assert.Equal(t, "output variables", step.Name)
+	assert.Contains(t, step.Run, "echo \"\" > /tmp/output")
+	assert.Contains(t, step.If, "false")
 }
