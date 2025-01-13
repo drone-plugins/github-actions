@@ -85,20 +85,21 @@ func getWorkflowEvent() string {
 }
 
 func setOutputVariables(prevStepId, outputFile string, outputVars []string) step {
-	if len(outputVars) == 0 {
+	skip := len(outputFile) == 0 || len(outputVars) == 0
+	if skip {
 		logrus.Infof("No output variables detected in action.yml; skipping output file generation.")
-		return step{}
 	}
+
 	cmd := ""
 	for _, outputVar := range outputVars {
 		cmd += fmt.Sprintf("%s=${{ steps.%s.outputs.%s }}\n", outputVar, prevStepId, outputVar)
 	}
 
 	cmd = fmt.Sprintf("echo \"%s\" > %s", cmd, outputFile)
-
 	s := step{
 		Name: "output variables",
 		Run:  cmd,
+		If:   fmt.Sprintf("%t", !skip),
 	}
 	return s
 }
