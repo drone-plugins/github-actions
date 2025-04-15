@@ -44,7 +44,7 @@ func CreateEnvAndSecretFile(envFile, secretFile string, secrets []string) error 
 		"GITHUB_SHA":              envVars["DRONE_COMMIT_SHA"],
 		"GITHUB_RUN_ID":           envVars["DRONE_BUILD_NUMBER"],
 		"GITHUB_RUN_ATTEMPT":      envVars["DRONE_BUILD_NUMBER"],
-		"GITHUB_WORKSPACE":        "/workspace", // Fixed workspace path
+		"GITHUB_WORKSPACE":        "/github/workspace",
 		"GITHUB_SERVER_URL":       "https://github.com",
 		"GITHUB_API_URL":          "https://api.github.com",
 		"GITHUB_GRAPHQL_URL":      "https://api.github.com/graphql",
