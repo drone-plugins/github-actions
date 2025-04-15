@@ -96,7 +96,7 @@ func (p Plugin) Exec() error {
 		workspace = "/harness" // fallback
 	}
 
-	containerOptions := fmt.Sprintf("\"-v=%s:%s -v=%s:/workspace\"", 
+	containerOptions := fmt.Sprintf("\"-v=%s:%s -v=%s:/github/workspace\"", 
 		outputFilePath, outputFilePath,
 		workspace)
 
