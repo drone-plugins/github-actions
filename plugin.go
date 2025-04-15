@@ -91,7 +91,14 @@ func (p Plugin) Exec() error {
 	}
 
 	outputFilePath := GetDirPath(outputFile)
-	containerOptions := fmt.Sprintf("-v=%s:%s", outputFilePath, outputFilePath)
+	workspace := os.Getenv("DRONE_WORKSPACE")
+	if workspace == "" {
+		workspace = "/harness" // fallback
+	}
+
+	containerOptions := fmt.Sprintf("-v=%s:%s -v=%s:/workspace",
+		outputFilePath, outputFilePath,
+		workspace)
 
 	cmdArgs := []string{
 		"-W",
@@ -105,7 +112,7 @@ func (p Plugin) Exec() error {
 		"-b",
 		"--detect-event",
 		"--container-options",
-		fmt.Sprintf("\"%s\"", containerOptions),
+		containerOptions,
 	}
 
 	// optional arguments
