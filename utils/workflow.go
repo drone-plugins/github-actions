@@ -25,10 +25,10 @@ type job struct {
 type step struct {
 	Id    string            `yaml:"id,omitempty"`
 	Name  string            `yaml:"name,omitempty"`
-	Uses  string            `yaml:"uses"`
+	Uses  string            `yaml:"uses,omitempty"`
 	Run   string            `yaml:"run,omitempty"`
-	With  map[string]string `yaml:"with"`
-	Env   map[string]string `yaml:"env"`
+	With  map[string]string `yaml:"with,omitempty"`
+	Env   map[string]string `yaml:"env,omitempty"`
 	Shell string            `yaml:"shell,omitempty"`
 	If    string            `yaml:"if,omitempty"`
 }
@@ -43,18 +43,24 @@ const (
 
 func CreateWorkflowFile(ymlFile string, action string,
 	with map[string]string, env map[string]string, outputFile string, outputVars []string) error {
+	steps := []step{
+		{
+			Id:   stepId,
+			Uses: action,
+			With: with,
+			Env:  env,
+		},
+	}
+	// Only append the output step when there are outputs. Emitting a dummy
+	// run step with empty uses: "" is invalid GHA YAML and fails act >= 0.2.89.
+	if outputStep, ok := setOutputVariables(stepId, outputFile, outputVars); ok {
+		steps = append(steps, outputStep)
+	}
+
 	j := job{
 		Name:   jobName,
 		RunsOn: runsOnImage,
-		Steps: []step{
-			{
-				Id:   stepId,
-				Uses: action,
-				With: with,
-				Env:  env,
-			},
-			setOutputVariables(stepId, outputFile, outputVars),
-		},
+		Steps:  steps,
 	}
 	wf := &workflow{
 		Name: workflowName,
@@ -84,10 +90,10 @@ func getWorkflowEvent() string {
 	return "custom"
 }
 
-func setOutputVariables(prevStepId, outputFile string, outputVars []string) step {
-	skip := len(outputFile) == 0 || len(outputVars) == 0
-	if skip {
+func setOutputVariables(prevStepId, outputFile string, outputVars []string) (step, bool) {
+	if len(outputFile) == 0 || len(outputVars) == 0 {
 		logrus.Infof("No output variables detected in action.yml; skipping output file generation.")
+		return step{}, false
 	}
 
 	cmd := ""
@@ -96,10 +102,8 @@ func setOutputVariables(prevStepId, outputFile string, outputVars []string) step
 	}
 
 	cmd = fmt.Sprintf("echo \"%s\" > %s", cmd, outputFile)
-	s := step{
+	return step{
 		Name: "output variables",
 		Run:  cmd,
-		If:   fmt.Sprintf("%t", !skip),
-	}
-	return s
+	}, true
 }

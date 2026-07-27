@@ -35,14 +35,14 @@ func TestCreateWorkflowFile(t *testing.T) {
 	assert.Contains(t, string(content), "out-2=${{ steps.stepIdentifier.outputs.out-2 }}")
 	assert.Contains(t, string(content), fmt.Sprintf("> %s", outputFile))
 
-	// Without output variables
+	// Without output variables — no dummy run step (invalid with empty uses under act >= 0.2.89)
 	err = CreateWorkflowFile(workflowFile, action, with, env, outputFile, []string{})
 	assert.NoError(t, err)
 	content, err = os.ReadFile(workflowFile)
 	assert.NoError(t, err)
-	assert.Contains(t, string(content), "name: output variables")
-	assert.Contains(t, string(content), "run: echo \"\" >")
-	assert.Contains(t, string(content), "if: \"false\"")
+	assert.NotContains(t, string(content), "name: output variables")
+	assert.NotContains(t, string(content), "uses: \"\"")
+	assert.Contains(t, string(content), "uses: some-action@v1")
 }
 
 func TestSetOutputVariables(t *testing.T) {
@@ -51,14 +51,15 @@ func TestSetOutputVariables(t *testing.T) {
 	outputFile := "/tmp/output"
 
 	// With output variables
-	step := setOutputVariables(prevStepId, outputFile, outputVars)
+	step, ok := setOutputVariables(prevStepId, outputFile, outputVars)
+	assert.True(t, ok)
 	assert.Equal(t, "output variables", step.Name)
 	assert.Contains(t, step.Run, "var1=${{ steps.prevStep.outputs.var1 }}")
 	assert.Contains(t, step.Run, "var2=${{ steps.prevStep.outputs.var2 }}")
 
 	// No output variables
-	step = setOutputVariables(prevStepId, outputFile, []string{})
-	assert.Equal(t, "output variables", step.Name)
-	assert.Contains(t, step.Run, "echo \"\" > /tmp/output")
-	assert.Contains(t, step.If, "false")
+	step, ok = setOutputVariables(prevStepId, outputFile, []string{})
+	assert.False(t, ok)
+	assert.Equal(t, "", step.Name)
+	assert.Equal(t, "", step.Run)
 }
