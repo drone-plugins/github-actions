@@ -51,11 +51,11 @@ func (p Plugin) Exec() error {
 	}
 
 	ctx := context.Background()
-	repoURL, ref, ok := utils.ParseLookup(p.Action.Uses)
+	repoURL, ref, actionPath, ok := utils.ParseLookup(p.Action.Uses)
 	if !ok {
 		logrus.Warnf("Invalid 'uses' format: %s", p.Action.Uses)
 	}
-	logrus.Infof("Parsed 'uses' string. Repo: %s, Ref: %s", repoURL, ref)
+	logrus.Infof("Parsed 'uses' string. Repo: %s, Ref: %s, Path: %s", repoURL, ref, actionPath)
 
 	// Clone the GH Action repository using `cloner` with parsed repo and ref
 	clone := cloner.NewCache(cloner.NewDefault())
@@ -70,10 +70,14 @@ func (p Plugin) Exec() error {
 	outputVars := []string{}
 
 	if codedir != "" {
-		var err error
-		outputVars, err = utils.ParseActionOutputs(codedir)
+		actionDir, err := utils.ActionDir(codedir, actionPath)
 		if err != nil {
-			logrus.Warnf("Could not parse action.yml outputs from %s: %v", codedir, err)
+			logrus.Warnf("Invalid action path %q: %v", actionPath, err)
+		} else {
+			outputVars, err = utils.ParseActionOutputs(actionDir)
+			if err != nil {
+				logrus.Warnf("Could not parse action.yml outputs from %s: %v", actionDir, err)
+			}
 		}
 	}
 
