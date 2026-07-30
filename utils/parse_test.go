@@ -95,6 +95,21 @@ func TestActionDir(t *testing.T) {
 
 	_, err = ActionDir(clone, "../outside")
 	assert.Error(t, err)
+
+	// Traversal that only escapes after filepath.Clean
+	_, err = ActionDir(clone, "foo/../../etc")
+	assert.Error(t, err)
+
+	_, err = ActionDir(clone, "foo/../..")
+	assert.Error(t, err)
+
+	_, err = ActionDir(clone, "foo/bar/../../../outside")
+	assert.Error(t, err)
+
+	// Clean keeps the result inside cloneDir — should succeed
+	dir, err = ActionDir(clone, "foo/../.github/actions/bar")
+	assert.NoError(t, err)
+	assert.Equal(t, filepath.Join(clone, ".github/actions/bar"), dir)
 }
 
 func TestParseActionOutputsNested(t *testing.T) {
