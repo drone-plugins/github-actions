@@ -17,8 +17,8 @@ var (
 	semver = regexp.MustCompile(`^v?((([0-9]+)(?:\.([0-9]+))?(?:\.([0-9]+))?(?:-([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?)(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?)$`)
 )
 
-// helper function returns true if the string is a commit hash.
-func isHash(s string) bool {
+// IsHash returns true if the string is a sha1 or sha256 commit hash.
+func IsHash(s string) bool {
 	return sha1.MatchString(s) || sha256.MatchString(s)
 }
 

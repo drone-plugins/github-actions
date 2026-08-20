@@ -57,9 +57,19 @@ func (p Plugin) Exec() error {
 	}
 	logrus.Infof("Parsed 'uses' string. Repo: %s, Ref: %s", repoURL, ref)
 
+	// When the action is pinned to a full commit SHA (e.g. owner/action@<sha>),
+	// the ref cannot be resolved via refs/heads/* or refs/tags/*. Pass it as the
+	// sha instead so the cloner checks out the commit directly.
+	sha := ""
+	if cloner.IsHash(ref) {
+		sha = ref
+		ref = ""
+		logrus.Infof("Ref is a commit SHA; cloning by sha: %s", sha)
+	}
+
 	// Clone the GH Action repository using `cloner` with parsed repo and ref
 	clone := cloner.NewCache(cloner.NewDefault())
-	codedir, cloneErr := clone.Clone(ctx, repoURL, ref, "")
+	codedir, cloneErr := clone.Clone(ctx, repoURL, ref, sha)
 	if cloneErr != nil {
 		logrus.Warnf("Failed to clone GH Action: %v", cloneErr)
 	} else {
