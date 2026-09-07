@@ -1,9 +1,19 @@
-FROM docker:29.6.0-dind
+# docker:29.6.0-dind, pinned to its multi-platform manifest digest.
+FROM docker:29.6.0-dind@sha256:7bb861a04bb42bda1d237fc2cb539f9823c9b666ecfbfdbd3e534ab74c8cb976
 
 ENV DOCKER_HOST=unix:///var/run/docker.sock
 
-RUN apk add --no-cache ca-certificates curl
-RUN curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | sh -s v0.2.61
+# Download a versioned release directly instead of executing the mutable
+# installer on nektos/act's master branch. The checksum makes a compromised
+# release download fail the build rather than become part of the plugin image.
+ARG ACT_VERSION=v0.2.88
+ARG ACT_SHA256=1eb9996682dfcc053ac8f3f90f2ec50376f0cdfc229712d82da03d673c63a2b3
+RUN set -eux; \
+    wget -q -O /tmp/act.tar.gz "https://github.com/nektos/act/releases/download/${ACT_VERSION}/act_Linux_x86_64.tar.gz"; \
+    echo "${ACT_SHA256}  /tmp/act.tar.gz" | sha256sum -c -; \
+    tar -xzf /tmp/act.tar.gz -C /usr/local/bin act; \
+    chmod 0755 /usr/local/bin/act; \
+    rm /tmp/act.tar.gz
 
-ADD release/linux/amd64/plugin /bin/
+COPY --chmod=0755 release/linux/amd64/plugin /bin/plugin
 ENTRYPOINT ["/usr/local/bin/dockerd-entrypoint.sh", "/bin/plugin"]
