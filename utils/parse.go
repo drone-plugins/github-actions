@@ -60,14 +60,40 @@ func fileExists(path string) bool {
 	return !info.IsDir()
 }
 
+// ActionDir joins cloneDir with an optional action subdirectory.
+// Returns an error if actionPath escapes cloneDir.
+func ActionDir(cloneDir, actionPath string) (string, error) {
+	if actionPath == "" {
+		return cloneDir, nil
+	}
+
+	clean := filepath.Clean(actionPath)
+	if clean == "." || clean == "" {
+		return cloneDir, nil
+	}
+	if filepath.IsAbs(clean) || clean == ".." || strings.HasPrefix(clean, ".."+string(os.PathSeparator)) {
+		return "", fmt.Errorf("invalid action path: %s", actionPath)
+	}
+
+	actionDir := filepath.Join(cloneDir, clean)
+	rel, err := filepath.Rel(cloneDir, actionDir)
+	if err != nil {
+		return "", fmt.Errorf("invalid action path: %w", err)
+	}
+	if rel == ".." || strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
+		return "", fmt.Errorf("action path escapes clone dir: %s", actionPath)
+	}
+	return actionDir, nil
+}
+
 // ParseLookup parses the step string and returns the
-// associated repository and ref.
-func ParseLookup(s string) (repo string, ref string, ok bool) {
-	org, repo, _, ref, err := parseActionName(s)
+// associated repository, ref, and optional action subdirectory path.
+func ParseLookup(s string) (repo string, ref string, path string, ok bool) {
+	org, repoName, actionPath, ref, err := parseActionName(s)
 	if err == nil {
-		url := fmt.Sprintf("https://github.com/%s/%s", org, repo)
-		slog.Debug(fmt.Sprintf("parsed repo: %s, ref: %s", url, ref))
-		return url, ref, true
+		url := fmt.Sprintf("https://github.com/%s/%s", org, repoName)
+		slog.Debug(fmt.Sprintf("parsed repo: %s, ref: %s, path: %s", url, ref, actionPath))
+		return url, ref, actionPath, true
 	}
 
 	slog.Warn(fmt.Sprintf("failed to parse action name: %s with err: %v", s, err))
@@ -77,9 +103,9 @@ func ParseLookup(s string) (repo string, ref string, ok bool) {
 
 	slog.Debug("parsed repo", s)
 	if parts := strings.SplitN(s, "@", 2); len(parts) == 2 {
-		return parts[0], parts[1], true
+		return parts[0], parts[1], "", true
 	}
-	return s, "", true
+	return s, "", "", true
 }
 
 func parseActionName(action string) (org, repo, path, ref string, err error) {

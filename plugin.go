@@ -51,15 +51,25 @@ func (p Plugin) Exec() error {
 	}
 
 	ctx := context.Background()
-	repoURL, ref, ok := utils.ParseLookup(p.Action.Uses)
+	repoURL, ref, actionPath, ok := utils.ParseLookup(p.Action.Uses)
 	if !ok {
 		logrus.Warnf("Invalid 'uses' format: %s", p.Action.Uses)
 	}
-	logrus.Infof("Parsed 'uses' string. Repo: %s, Ref: %s", repoURL, ref)
+	logrus.Infof("Parsed 'uses' string. Repo: %s, Ref: %s, Path: %s", repoURL, ref, actionPath)
+
+	// When the action is pinned to a full commit SHA (e.g. owner/action@<sha>),
+	// the ref cannot be resolved via refs/heads/* or refs/tags/*. Pass it as the
+	// sha instead so the cloner checks out the commit directly.
+	sha := ""
+	if cloner.IsHash(ref) {
+		sha = ref
+		ref = ""
+		logrus.Infof("Ref is a commit SHA; cloning by sha: %s", sha)
+	}
 
 	// Clone the GH Action repository using `cloner` with parsed repo and ref
 	clone := cloner.NewCache(cloner.NewDefault())
-	codedir, cloneErr := clone.Clone(ctx, repoURL, ref, "")
+	codedir, cloneErr := clone.Clone(ctx, repoURL, ref, sha)
 	if cloneErr != nil {
 		logrus.Warnf("Failed to clone GH Action: %v", cloneErr)
 	} else {
@@ -70,10 +80,14 @@ func (p Plugin) Exec() error {
 	outputVars := []string{}
 
 	if codedir != "" {
-		var err error
-		outputVars, err = utils.ParseActionOutputs(codedir)
+		actionDir, err := utils.ActionDir(codedir, actionPath)
 		if err != nil {
-			logrus.Warnf("Could not parse action.yml outputs from %s: %v", codedir, err)
+			logrus.Warnf("Invalid action path %q: %v", actionPath, err)
+		} else {
+			outputVars, err = utils.ParseActionOutputs(actionDir)
+			if err != nil {
+				logrus.Warnf("Could not parse action.yml outputs from %s: %v", actionDir, err)
+			}
 		}
 	}
 

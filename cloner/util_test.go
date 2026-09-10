@@ -52,6 +52,11 @@ func TestIsHash(t *testing.T) {
 			name: "f0e4c2f76c58916ec258f246851bea091d14d4247a2fc3e18694461b1816e13b",
 			tag:  true,
 		},
+		// CI-24235: SHA-pinned `uses:` ref (tj-actions/changed-files@<sha>)
+		{
+			name: "ed68ef82c095e0d48ec87eccea555d944a631a4c",
+			tag:  true,
+		},
 		// not a sha
 		{
 			name: "aacad6e",
@@ -75,7 +80,7 @@ func TestIsHash(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		if got, want := isHash(test.name), test.tag; got != want {
+		if got, want := IsHash(test.name), test.tag; got != want {
 			t.Errorf("Detected hash %v, want %v", got, want)
 		}
 	}
