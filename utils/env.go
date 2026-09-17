@@ -2,17 +2,27 @@ package utils
 
 import (
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/joho/godotenv"
 	"github.com/pkg/errors"
 )
 
+// validEnvName matches names that are legal in a dotenv file. Harness injects
+// a step's output variables into later steps in the stage (e.g. cache-hit and
+// node-version from actions/setup-node), and act >= 0.2.89 fails to parse
+// hyphenated names in --env-file.
+var validEnvName = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
+
 func CreateEnvAndSecretFile(envFile, secretFile string, secrets []string) error {
 	envVars := getEnvVars()
 
 	actionEnvVars := make(map[string]string)
 	for key, val := range envVars {
+		if !validEnvName.MatchString(key) {
+			continue
+		}
 		if !strings.HasPrefix(key, "PLUGIN_") && !Exists(secrets, key) {
 			actionEnvVars[key] = val
 		}

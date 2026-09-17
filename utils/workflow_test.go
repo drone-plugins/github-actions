@@ -42,14 +42,14 @@ func TestCreateWorkflowFile(t *testing.T) {
 	assert.Contains(t, string(content), fmt.Sprintf(">> %s", outputFile))
 	assert.Contains(t, string(content), "__B64__")
 
-	// Without output variables
+	// Without output variables — no dummy run step (invalid with empty uses under act >= 0.2.89)
 	err = CreateWorkflowFile(workflowFile, action, with, env, outputFile, []string{})
 	assert.NoError(t, err)
 	content, err = os.ReadFile(workflowFile)
 	assert.NoError(t, err)
-	assert.Contains(t, string(content), "name: output variables")
-	assert.Contains(t, string(content), fmt.Sprintf(": > %s", outputFile))
-	assert.Contains(t, string(content), "if: \"false\"")
+	assert.NotContains(t, string(content), "name: output variables")
+	assert.NotContains(t, string(content), "uses: \"\"")
+	assert.Contains(t, string(content), "uses: some-action@v1")
 }
 
 // TestSetOutputVariables_MultilineValueRoundTrip is the CI-24318 fix verification.
@@ -65,7 +65,8 @@ func TestSetOutputVariables_MultilineValueRoundTrip(t *testing.T) {
 	prevStepId := "stepIdentifier"
 	outputVars := []string{"changelog", "new_tag"}
 
-	step := setOutputVariables(prevStepId, outputFile, outputVars)
+	step, ok := setOutputVariables(prevStepId, outputFile, outputVars)
+	assert.True(t, ok)
 
 	multilineChangelog := "* commit A\n* commit B\n* commit C"
 	newTag := "v1.2.3"
@@ -101,7 +102,8 @@ func TestSetOutputVariables_MultilineValuePreservesBlankLines(t *testing.T) {
 	prevStepId := "s"
 	outputVars := []string{"body"}
 
-	step := setOutputVariables(prevStepId, outputFile, outputVars)
+	step, ok := setOutputVariables(prevStepId, outputFile, outputVars)
+	assert.True(t, ok)
 
 	val := "line 1\n\nline 3\n\n\nline 6"
 	shellCmd := substituteAll(step.Run, prevStepId, map[string]string{"body": val})
@@ -124,7 +126,8 @@ func TestSetOutputVariables_ValuesWithSpecialChars(t *testing.T) {
 	prevStepId := "s"
 	outputVars := []string{"tricky"}
 
-	step := setOutputVariables(prevStepId, outputFile, outputVars)
+	step, ok := setOutputVariables(prevStepId, outputFile, outputVars)
+	assert.True(t, ok)
 
 	trickyVal := "quote:\" dollar:$USER backtick:`id` backslash:\\ end"
 	shellCmd := substituteAll(step.Run, prevStepId, map[string]string{"tricky": trickyVal})
@@ -145,7 +148,8 @@ func TestSetOutputVariables(t *testing.T) {
 	outputFile := "/tmp/output"
 
 	// With output variables: one per-variable block that appends __B64__ line.
-	step := setOutputVariables(prevStepId, outputFile, outputVars)
+	step, ok := setOutputVariables(prevStepId, outputFile, outputVars)
+	assert.True(t, ok)
 	assert.Equal(t, "output variables", step.Name)
 	assert.Equal(t, "true", step.If)
 	assert.Contains(t, step.Run, "steps.prevStep.outputs.var1")
@@ -157,11 +161,11 @@ func TestSetOutputVariables(t *testing.T) {
 	assert.Contains(t, step.Run, `echo "var1=__B64__$__b64"`)
 	assert.Contains(t, step.Run, `echo "var2=__B64__$__b64"`)
 
-	// No output variables: file is truncated, step is gated off.
-	step = setOutputVariables(prevStepId, outputFile, []string{})
-	assert.Equal(t, "output variables", step.Name)
-	assert.Contains(t, step.Run, ": > /tmp/output")
-	assert.Equal(t, "false", step.If)
+	// No output variables
+	step, ok = setOutputVariables(prevStepId, outputFile, []string{})
+	assert.False(t, ok)
+	assert.Equal(t, "", step.Name)
+	assert.Equal(t, "", step.Run)
 }
 
 // substituteAll replaces every ${{ steps.<id>.outputs.<name> }} placeholder
