@@ -6,7 +6,7 @@ require (
 	github.com/buildkite/yaml v2.1.0+incompatible
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-git/go-git/v5 v5.19.1
+	github.com/go-git/go-git/v5 v5.19.2
 	github.com/joho/godotenv v1.5.1
 	github.com/pkg/errors v0.9.1
 	github.com/rogpeppe/go-internal v1.14.1
