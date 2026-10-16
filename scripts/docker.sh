@@ -1,15 +1,10 @@
 #!/bin/sh
 
-# force go modules
-export GOPATH=""
+set -eu
+cd "$(dirname "$0")/.."
 
-# disable cgo
-export CGO_ENABLED=0
-
-set -e
-set -x
-
-# linux
-GOOS=linux GOARCH=amd64 go build -o release/linux/amd64/plugin   ./cmd
-
-docker build -f docker/Dockerfile.linux.amd64 -t plugins/github-actions .
+build_arch="${GOARCH:-amd64}"
+GOARCH="$build_arch" sh scripts/build.sh
+docker build --platform="linux/$build_arch" \
+  -f "docker/Dockerfile.linux.$build_arch" \
+  -t "${IMAGE_TAG:-plugins/github-actions}" .
