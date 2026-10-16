@@ -1,13 +1,14 @@
 #!/bin/sh
 
-# force go modules
+# Preserve the existing AMD64 default; CI selects each native architecture.
+set -eu
 export GOPATH=""
-
-# disable cgo
 export CGO_ENABLED=0
 
-set -e
-set -x
+build_arch="${GOARCH:-amd64}"
+case "$build_arch" in
+  amd64|arm64) ;;
+  *) echo "Unsupported Linux architecture: $build_arch" >&2; exit 1 ;;
+esac
 
-# linux
-GOOS=linux GOARCH=amd64 go build -o release/linux/amd64/plugin   ./cmd
+GOOS=linux GOARCH="$build_arch" go build -o "release/linux/$build_arch/plugin" ./cmd
