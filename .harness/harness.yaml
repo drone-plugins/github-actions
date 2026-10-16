@@ -9,46 +9,221 @@ pipeline:
       codebase:
         connectorRef: GitHub_Drone_Plugins_Org
         repoName: github-actions
-        build: "<+input>"
+        build: <+input>
         sparseCheckout: []
   stages:
-  - stage:
-      name: Testing
-      identifier: Testing
-      type: CI
-      spec:
-        cloneCodebase: true
-        caching:
-          enabled: true
-          paths: []
-        platform:
-          os: Linux
-          arch: Amd64
-        runtime:
-          type: Cloud
-          spec: {}
-        execution:
-          steps:
-          - step:
-              type: Run
-              name: Test
-              identifier: Test
-              spec:
-                connectorRef: Plugins_Docker_Hub_Connector
-                image: golang:1.26.4
-                shell: Sh
-                command: go test -cover ./...
-  - parallel:
+    - parallel:
+        - stage:
+            name: Test and Publish amd64
+            identifier: Testing
+            description: ""
+            type: CI
+            spec:
+              cloneCodebase: true
+              caching:
+                enabled: true
+                paths: []
+              platform:
+                os: Linux
+                arch: Amd64
+              runtime:
+                type: Cloud
+                spec: {}
+              execution:
+                steps:
+                  - step:
+                      type: Run
+                      name: Test
+                      identifier: Test
+                      spec:
+                        connectorRef: Plugins_Docker_Hub_Connector
+                        image: golang:1.26.4
+                        shell: Sh
+                        command: |-
+                          go test -cover ./...
+                          GOARCH=amd64 sh scripts/build.sh
+                  - step:
+                      type: Plugin
+                      name: BuildAndPushDockerPlugin
+                      identifier: BuildAndPushDockerPlugin
+                      spec:
+                        connectorRef: Plugins_Docker_Hub_Connector
+                        image: plugins/docker
+                        settings:
+                          username: drone
+                          password: <+secrets.getValue("Plugins_Docker_Hub_Pat")>
+                          repo: plugins/github-actions
+                          dockerfile: docker/Dockerfile.linux.amd64
+                          auto_tag: "true"
+                          auto_tag_suffix: linux-amd64
+                      when:
+                        stageStatus: Success
+                        condition: <+codebase.build.type> == "tag"
+                  - step:
+                      type: BuildAndPushDockerRegistry
+                      name: BuildAndPushDockerRegistry_1
+                      identifier: BuildAndPushDockerRegistry_1
+                      spec:
+                        connectorRef: Plugins_Docker_Hub_Connector
+                        repo: plugins/github-actions
+                        tags:
+                          - linux-amd64
+                        caching: false
+                        dockerfile: docker/Dockerfile.linux.amd64
+                      when:
+                        stageStatus: Success
+                        condition: <+codebase.build.type> == "branch"
+              buildIntelligence:
+                enabled: true
+        - stage:
+            name: Test and Publish arm64
+            identifier: Testing_arm64
+            description: ""
+            type: CI
+            spec:
+              cloneCodebase: true
+              caching:
+                enabled: true
+                paths: []
+              platform:
+                os: Linux
+                arch: Arm64
+              runtime:
+                type: Cloud
+                spec: {}
+              execution:
+                steps:
+                  - step:
+                      type: Run
+                      name: Test
+                      identifier: Test
+                      spec:
+                        connectorRef: Plugins_Docker_Hub_Connector
+                        image: golang:1.26.4
+                        shell: Sh
+                        command: |-
+                          go test -cover ./...
+                          GOARCH=arm64 sh scripts/build.sh
+                  - step:
+                      type: Plugin
+                      name: BuildAndPushDockerPlugin
+                      identifier: BuildAndPushDockerPlugin
+                      spec:
+                        connectorRef: Plugins_Docker_Hub_Connector
+                        image: plugins/docker
+                        settings:
+                          username: drone
+                          password: <+secrets.getValue("Plugins_Docker_Hub_Pat")>
+                          repo: plugins/github-actions
+                          dockerfile: docker/Dockerfile.linux.arm64
+                          auto_tag: "true"
+                          auto_tag_suffix: linux-arm64
+                      when:
+                        stageStatus: Success
+                        condition: <+codebase.build.type> == "tag"
+                  - step:
+                      type: BuildAndPushDockerRegistry
+                      name: BuildAndPushDockerRegistry_1
+                      identifier: BuildAndPushDockerRegistry_1
+                      spec:
+                        connectorRef: Plugins_Docker_Hub_Connector
+                        repo: plugins/github-actions
+                        tags:
+                          - linux-arm64
+                        caching: false
+                        dockerfile: docker/Dockerfile.linux.arm64
+                      when:
+                        stageStatus: Success
+                        condition: <+codebase.build.type> == "branch"
+              buildIntelligence:
+                enabled: true
+        - stage:
+            name: Test and Publish RF amd64
+            identifier: test_publish_rf
+            description: ""
+            type: CI
+            spec:
+              cloneCodebase: true
+              caching:
+                enabled: true
+                paths: []
+              platform:
+                os: Linux
+                arch: Amd64
+              runtime:
+                type: Cloud
+                spec: {}
+              execution:
+                steps:
+                  - step:
+                      type: GitClone
+                      name: Clone HHI Dockerfiles
+                      identifier: Clone_RF_Dockerfiles
+                      spec:
+                        connectorRef: RapidFortPlugins
+                        cloneDirectory: rf-plugins
+                        build:
+                          type: branch
+                          spec:
+                            branch: main
+                  - step:
+                      type: Run
+                      name: Test
+                      identifier: Test
+                      spec:
+                        connectorRef: Plugins_Docker_Hub_Connector
+                        image: golang:1.26.4
+                        shell: Sh
+                        command: |-
+                          go test -cover ./...
+                          GOARCH=amd64 sh scripts/build.sh
+                  - step:
+                      type: Plugin
+                      name: HHI Build and Push on Tag
+                      identifier: RF_Build_and_Push_on_Tag
+                      spec:
+                        connectorRef: Plugins_Docker_Hub_Connector
+                        image: plugins/docker
+                        settings:
+                          username: <+secrets.getValue("harnesssecureusername")>
+                          password: <+secrets.getValue("dockerHarnessSecurePwd")>
+                          repo: harnesssecure/github-actions
+                          dockerfile: rf-plugins/github-actions/docker/Dockerfile.linux.amd64.hhi
+                          auto_tag: "true"
+                          auto_tag_suffix: linux-amd64
+                          base_image_username: <+secrets.getValue("harness0HARUsername")>
+                          base_image_password: <+secrets.getValue("harness0HARPAT")>
+                          base_image_registry: harness0.harness.io/oci/docker_artifacts
+                      when:
+                        stageStatus: Success
+                        condition: <+codebase.build.type> == "tag"
+                  - step:
+                      type: BuildAndPushDockerRegistry
+                      name: HHI Build and Push on Branch
+                      identifier: RF_Build_and_Push_on_Branch
+                      spec:
+                        connectorRef: harnesssecure
+                        repo: harnesssecure/github-actions
+                        tags:
+                          - linux-amd64
+                        caching: false
+                        dockerfile: rf-plugins/github-actions/docker/Dockerfile.linux.amd64.hhi
+                        envVariables:
+                          PLUGIN_BASE_IMAGE_USERNAME: <+secrets.getValue("harness0HARUsername")>
+                          PLUGIN_BASE_IMAGE_PASSWORD: <+secrets.getValue("harness0HARPAT")>
+                          PLUGIN_BASE_IMAGE_REGISTRY: harness0.harness.io/oci/docker_artifacts
+                      when:
+                        stageStatus: Success
+                        condition: <+codebase.build.type> == "branch"
+              buildIntelligence:
+                enabled: true
     - stage:
-        name: linux-amd64
-        identifier: linux_amd64
-        description: ''
+        name: Manifest
+        identifier: Manifest
+        description: Multi-arch manifests, published for tag (release / pre-release) builds only
         type: CI
         spec:
           cloneCodebase: true
-          caching:
-            enabled: true
-            paths: []
           platform:
             os: Linux
             arch: Amd64
@@ -57,351 +232,33 @@ pipeline:
             spec: {}
           execution:
             steps:
-            - step:
-                type: Run
-                name: Test and build binary
-                identifier: Test
-                spec:
-                  connectorRef: Plugins_Docker_Hub_Connector
-                  image: golang:1.26.4
-                  shell: Sh
-                  command: |-
-                    set -e
-                    go test -cover ./...
-                    GOARCH=amd64 sh scripts/build.sh
-            - step:
-                type: Plugin
-                name: Build and push on tag
-                identifier: Publish_Tag
-                spec:
-                  connectorRef: Plugins_Docker_Hub_Connector
-                  image: plugins/docker
-                  settings:
-                    username: drone
-                    password: <+secrets.getValue("Plugins_Docker_Hub_Pat")>
-                    repo: plugins/github-actions
-                    dockerfile: docker/Dockerfile.linux.amd64
-                    auto_tag: 'true'
-                    auto_tag_suffix: linux-amd64
-                when:
-                  stageStatus: Success
-                  condition: <+codebase.build.type> == "tag"
-            - step:
-                type: BuildAndPushDockerRegistry
-                name: Build and push on main
-                identifier: Publish_Branch
-                spec:
-                  connectorRef: Plugins_Docker_Hub_Connector
-                  repo: plugins/github-actions
-                  tags:
-                  - linux-amd64
-                  caching: false
-                  dockerfile: docker/Dockerfile.linux.amd64
-                when:
-                  stageStatus: Success
-                  condition: <+codebase.build.type> == "branch" && <+codebase.branch>
-                    == "main"
-          buildIntelligence:
-            enabled: true
-    - stage:
-        name: linux-arm64
-        identifier: linux_arm64
-        description: ''
-        type: CI
-        spec:
-          cloneCodebase: true
-          caching:
-            enabled: true
-            paths: []
-          platform:
-            os: Linux
-            arch: Arm64
-          runtime:
-            type: Cloud
-            spec: {}
-          execution:
-            steps:
-            - step:
-                type: Run
-                name: Test and build binary
-                identifier: Test
-                spec:
-                  connectorRef: Plugins_Docker_Hub_Connector
-                  image: golang:1.26.4
-                  shell: Sh
-                  command: |-
-                    set -e
-                    go test -cover ./...
-                    GOARCH=arm64 sh scripts/build.sh
-            - step:
-                type: Plugin
-                name: Build and push on tag
-                identifier: Publish_Tag
-                spec:
-                  connectorRef: Plugins_Docker_Hub_Connector
-                  image: plugins/docker
-                  settings:
-                    username: drone
-                    password: <+secrets.getValue("Plugins_Docker_Hub_Pat")>
-                    repo: plugins/github-actions
-                    dockerfile: docker/Dockerfile.linux.arm64
-                    auto_tag: 'true'
-                    auto_tag_suffix: linux-arm64
-                when:
-                  stageStatus: Success
-                  condition: <+codebase.build.type> == "tag"
-            - step:
-                type: BuildAndPushDockerRegistry
-                name: Build and push on main
-                identifier: Publish_Branch
-                spec:
-                  connectorRef: Plugins_Docker_Hub_Connector
-                  repo: plugins/github-actions
-                  tags:
-                  - linux-arm64
-                  caching: false
-                  dockerfile: docker/Dockerfile.linux.arm64
-                when:
-                  stageStatus: Success
-                  condition: <+codebase.build.type> == "branch" && <+codebase.branch>
-                    == "main"
-          buildIntelligence:
-            enabled: true
-    - stage:
-        name: rf-linux-amd64
-        identifier: rf_linux_amd64
-        description: ''
-        type: CI
-        spec:
-          cloneCodebase: true
-          caching:
-            enabled: true
-            paths: []
-          platform:
-            os: Linux
-            arch: Amd64
-          runtime:
-            type: Cloud
-            spec: {}
-          execution:
-            steps:
-            - step:
-                type: GitClone
-                name: Clone RF Dockerfiles
-                identifier: Clone_RF_Dockerfiles
-                spec:
-                  connectorRef: RapidFortPlugins
-                  cloneDirectory: rf-plugins
-                  build:
-                    type: commitSha
-                    spec:
-                      commitSha: "<+pipeline.variables.rf_commit>"
-            - step:
-                type: Run
-                name: Test and build binary
-                identifier: Test
-                spec:
-                  connectorRef: Plugins_Docker_Hub_Connector
-                  image: golang:1.26.4
-                  shell: Sh
-                  command: |-
-                    set -e
-                    go test -cover ./...
-                    GOARCH=amd64 sh scripts/build.sh
-            - step:
-                type: Plugin
-                name: Build and push on tag
-                identifier: Publish_Tag
-                spec:
-                  connectorRef: Plugins_Docker_Hub_Connector
-                  image: plugins/docker
-                  settings:
-                    username: <+secrets.getValue("harnesssecureusername")>
-                    password: <+secrets.getValue("dockerHarnessSecurePwd")>
-                    repo: harnesssecure/github-actions
-                    dockerfile: rf-plugins/github-actions/docker/Dockerfile.linux.amd64.hhi
-                    auto_tag: 'true'
-                    auto_tag_suffix: linux-amd64
-                    base_image_username: <+secrets.getValue("harness0HARUsername")>
-                    base_image_password: <+secrets.getValue("harness0HARPAT")>
-                    base_image_registry: harness0.harness.io/oci/docker_artifacts
-                when:
-                  stageStatus: Success
-                  condition: <+codebase.build.type> == "tag"
-            - step:
-                type: BuildAndPushDockerRegistry
-                name: Build and push on main
-                identifier: Publish_Branch
-                spec:
-                  connectorRef: harnesssecure
-                  repo: harnesssecure/github-actions
-                  tags:
-                  - linux-amd64
-                  caching: false
-                  dockerfile: rf-plugins/github-actions/docker/Dockerfile.linux.amd64.hhi
-                  envVariables:
-                    PLUGIN_BASE_IMAGE_USERNAME: <+secrets.getValue("harness0HARUsername")>
-                    PLUGIN_BASE_IMAGE_PASSWORD: <+secrets.getValue("harness0HARPAT")>
-                    PLUGIN_BASE_IMAGE_REGISTRY: harness0.harness.io/oci/docker_artifacts
-                when:
-                  stageStatus: Success
-                  condition: <+codebase.build.type> == "branch" && <+codebase.branch>
-                    == "main"
-          buildIntelligence:
-            enabled: true
-    - stage:
-        name: rf-linux-arm64
-        identifier: rf_linux_arm64
-        description: ''
-        type: CI
-        spec:
-          cloneCodebase: true
-          caching:
-            enabled: true
-            paths: []
-          platform:
-            os: Linux
-            arch: Arm64
-          runtime:
-            type: Cloud
-            spec: {}
-          execution:
-            steps:
-            - step:
-                type: GitClone
-                name: Clone RF Dockerfiles
-                identifier: Clone_RF_Dockerfiles
-                spec:
-                  connectorRef: RapidFortPlugins
-                  cloneDirectory: rf-plugins
-                  build:
-                    type: commitSha
-                    spec:
-                      commitSha: "<+pipeline.variables.rf_commit>"
-            - step:
-                type: Run
-                name: Test and build binary
-                identifier: Test
-                spec:
-                  connectorRef: Plugins_Docker_Hub_Connector
-                  image: golang:1.26.4
-                  shell: Sh
-                  command: |-
-                    set -e
-                    go test -cover ./...
-                    GOARCH=arm64 sh scripts/build.sh
-            - step:
-                type: Plugin
-                name: Build and push on tag
-                identifier: Publish_Tag
-                spec:
-                  connectorRef: Plugins_Docker_Hub_Connector
-                  image: plugins/docker
-                  settings:
-                    username: <+secrets.getValue("harnesssecureusername")>
-                    password: <+secrets.getValue("dockerHarnessSecurePwd")>
-                    repo: harnesssecure/github-actions
-                    dockerfile: rf-plugins/github-actions/docker/Dockerfile.linux.arm64.hhi
-                    auto_tag: 'true'
-                    auto_tag_suffix: linux-arm64
-                    base_image_username: <+secrets.getValue("harness0HARUsername")>
-                    base_image_password: <+secrets.getValue("harness0HARPAT")>
-                    base_image_registry: harness0.harness.io/oci/docker_artifacts
-                when:
-                  stageStatus: Success
-                  condition: <+codebase.build.type> == "tag"
-            - step:
-                type: BuildAndPushDockerRegistry
-                name: Build and push on main
-                identifier: Publish_Branch
-                spec:
-                  connectorRef: harnesssecure
-                  repo: harnesssecure/github-actions
-                  tags:
-                  - linux-arm64
-                  caching: false
-                  dockerfile: rf-plugins/github-actions/docker/Dockerfile.linux.arm64.hhi
-                  envVariables:
-                    PLUGIN_BASE_IMAGE_USERNAME: <+secrets.getValue("harness0HARUsername")>
-                    PLUGIN_BASE_IMAGE_PASSWORD: <+secrets.getValue("harness0HARPAT")>
-                    PLUGIN_BASE_IMAGE_REGISTRY: harness0.harness.io/oci/docker_artifacts
-                when:
-                  stageStatus: Success
-                  condition: <+codebase.build.type> == "branch" && <+codebase.branch>
-                    == "main"
-          buildIntelligence:
-            enabled: true
-  - stage:
-      name: Manifest
-      identifier: Manifest
-      type: CI
-      spec:
-        cloneCodebase: true
-        caching:
-          enabled: true
-          paths: []
-        platform:
-          os: Linux
-          arch: Amd64
-        runtime:
-          type: Cloud
-          spec: {}
-        execution:
-          steps:
-          - step:
-              type: GitClone
-              name: Clone RF Dockerfiles
-              identifier: Clone_RF_Dockerfiles
-              spec:
-                connectorRef: RapidFortPlugins
-                cloneDirectory: rf-plugins
-                build:
-                  type: commitSha
+              - step:
+                  type: Plugin
+                  name: Manifest
+                  identifier: Manifest
                   spec:
-                    commitSha: "<+pipeline.variables.rf_commit>"
-          - step:
-              type: Plugin
-              name: Manifest
-              identifier: Manifest
-              spec:
-                connectorRef: Plugins_Docker_Hub_Connector
-                image: plugins/manifest
-                settings:
-                  username: drone
-                  password: <+secrets.getValue("Plugins_Docker_Hub_Pat")>
-                  spec: docker/manifest.tmpl
-                  auto_tag: 'true'
-                  ignore_missing: 'false'
-              when:
-                stageStatus: Success
-                condition: (<+codebase.build.type> == "tag") || (<+codebase.build.type>
-                  == "branch" && <+codebase.branch> == "main")
-          - step:
-              type: Plugin
-              name: RF Manifest
-              identifier: RF_Manifest
-              spec:
-                connectorRef: Plugins_Docker_Hub_Connector
-                image: plugins/manifest
-                settings:
-                  username: <+secrets.getValue("harnesssecureusername")>
-                  password: <+secrets.getValue("dockerHarnessSecurePwd")>
-                  spec: rf-plugins/github-actions/docker/manifest.tmpl
-                  auto_tag: 'true'
-                  ignore_missing: 'false'
-              when:
-                stageStatus: Success
-                condition: (<+codebase.build.type> == "tag") || (<+codebase.build.type>
-                  == "branch" && <+codebase.branch> == "main")
-      when:
-        pipelineStatus: Success
-        condition: (<+codebase.build.type> == "tag") || (<+codebase.build.type> ==
-          "branch" && <+codebase.branch> == "main")
-  allowStageExecutions: false
-  variables:
-  - name: rf_commit
-    type: String
-    description: Commit SHA in ci-rapidfort-plugins containing the ARM64 HHI Dockerfile
-      and manifest
-    required: true
-    value: "<+input>"
+                    connectorRef: Plugins_Docker_Hub_Connector
+                    image: plugins/manifest
+                    settings:
+                      username: drone
+                      password: <+secrets.getValue("Plugins_Docker_Hub_Pat")>
+                      spec: docker/manifest.tmpl
+                      auto_tag: "true"
+                      ignore_missing: "false"
+              - step:
+                  type: Plugin
+                  name: RF Manifest
+                  identifier: RF_Manifest
+                  spec:
+                    connectorRef: Plugins_Docker_Hub_Connector
+                    image: plugins/manifest
+                    settings:
+                      username: <+secrets.getValue("harnesssecureusername")>
+                      password: <+secrets.getValue("dockerHarnessSecurePwd")>
+                      spec: docker/manifest.rf.tmpl
+                      auto_tag: "true"
+                      ignore_missing: "false"
+        when:
+          pipelineStatus: Success
+          condition: <+codebase.build.type> == "tag"
+  allowStageExecutions: true
