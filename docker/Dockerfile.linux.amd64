@@ -1,17 +1,8 @@
-FROM harness0.harness.io/oci/docker_artifacts/hhi/harnessos-alpine:1@sha256:290a37c85b4284d2c11fa0778e5da79643d912a1f5a57d6f701b77644503b7e7 AS hhi-ca-certificates
-RUN apk add --no-cache 'ca-certificates>=20261020-r0'
-
-FROM harness0.harness.io/oci/docker_artifacts/hhi/go:1.26.10@sha256:718fddf012b3a305e936ae9964e5a642036bcb7b4c6c0786e2f78f238d637db8 AS act-builder
-USER 0
-ENV GOPATH=/go GOBIN=/out CGO_ENABLED=0 GOTOOLCHAIN=local
-RUN ["/usr/lib/go/bin/go", "install", "github.com/nektos/act@v0.2.89"]
+FROM golang:1.26.10@sha256:672c944cfd07599b5f1bb179869270cdc94c6254e41db4d431259693cb286b82 AS act-builder
+ENV GOBIN=/out CGO_ENABLED=0
+RUN ["go", "install", "github.com/nektos/act@v0.2.89"]
 
 FROM docker:29.9.2-dind@sha256:9e79b879b177fbd72c34376a3dd3d91747da5db49e1f560f76aea59561471977
-COPY --from=hhi-ca-certificates /usr/share/ca-certificates/ /usr/share/ca-certificates/
-COPY --from=hhi-ca-certificates /etc/ca-certificates.conf /etc/ca-certificates.conf
-RUN rm -f /usr/share/ca-certificates/mozilla/AAA_Certificate_Services.crt /usr/share/ca-certificates/mozilla/Comodo_AAA_Services_root.crt /usr/share/ca-certificates/mozilla/emSign_ECC_Root_CA_-_G3.crt \
-    && printf '%s\n' '!mozilla/AAA_Certificate_Services.crt' '!mozilla/Comodo_AAA_Services_root.crt' '!mozilla/emSign_ECC_Root_CA_-_G3.crt' >> /etc/ca-certificates.conf \
-    && update-ca-certificates --fresh
 ENV DOCKER_HOST=unix:///var/run/docker.sock
 
 RUN apk add --no-cache 'ca-certificates>=20261020-r0' curl

@@ -12,4 +12,4 @@ set -x
 # linux
 GOOS=linux GOARCH=amd64 go build -o release/linux/amd64/plugin   ./cmd
 
-docker build -f docker/Dockerfile.linux.amd64 -t plugins/github-actions .
+docker build --pull --no-cache -f docker/Dockerfile.linux.amd64 -t plugins/github-actions .
