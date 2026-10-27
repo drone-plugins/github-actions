@@ -19,8 +19,6 @@ steps:
   image: plugins/docker
   pull: if-not-exists
   settings:
-    pull_image: true
-    no_cache: true
     repo: plugins/github-actions
     dockerfile: docker/Dockerfile.linux.amd64
     username:

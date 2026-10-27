@@ -1,6 +1,6 @@
 module github.com/drone-plugins/drone-github-actions
 
-go 1.26.10
+go 1.26.0
 
 require (
 	github.com/buildkite/yaml v2.1.0+incompatible
