@@ -1,9 +1,12 @@
-FROM docker:29.6.0-dind
+FROM golang:1.26.10@sha256:672c944cfd07599b5f1bb179869270cdc94c6254e41db4d431259693cb286b82 AS act-builder
+ENV GOBIN=/out CGO_ENABLED=0
+RUN ["go", "install", "github.com/nektos/act@v0.2.89"]
 
+FROM docker:29.9.2-dind@sha256:9e79b879b177fbd72c34376a3dd3d91747da5db49e1f560f76aea59561471977
 ENV DOCKER_HOST=unix:///var/run/docker.sock
 
-RUN apk add --no-cache ca-certificates curl
-RUN curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | sh -s v0.2.89
+RUN apk add --no-cache 'ca-certificates>=20261020-r0' curl
+COPY --from=act-builder /out/act /bin/act
 
 ADD release/linux/amd64/plugin /bin/
 ENTRYPOINT ["/usr/local/bin/dockerd-entrypoint.sh", "/bin/plugin"]
