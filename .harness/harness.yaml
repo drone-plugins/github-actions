@@ -217,6 +217,86 @@ pipeline:
                         condition: <+codebase.build.type> == "branch"
               buildIntelligence:
                 enabled: true
+        - stage:
+            name: Test and Publish RF arm64
+            identifier: test_publish_rf_arm64
+            description: ""
+            type: CI
+            spec:
+              cloneCodebase: true
+              caching:
+                enabled: true
+                paths: []
+              platform:
+                os: Linux
+                arch: Arm64
+              runtime:
+                type: Cloud
+                spec: {}
+              execution:
+                steps:
+                  - step:
+                      type: GitClone
+                      name: Clone HHI Dockerfiles
+                      identifier: Clone_RF_Dockerfiles
+                      spec:
+                        connectorRef: RapidFortPlugins
+                        cloneDirectory: rf-plugins
+                        build:
+                          type: branch
+                          spec:
+                            branch: main
+                  - step:
+                      type: Run
+                      name: Test
+                      identifier: Test
+                      spec:
+                        connectorRef: Plugins_Docker_Hub_Connector
+                        image: golang:1.26.10
+                        shell: Sh
+                        command: |-
+                          go test -cover ./...
+                          GOARCH=arm64 sh scripts/build.sh
+                  - step:
+                      type: Plugin
+                      name: HHI Build and Push on Tag
+                      identifier: RF_Build_and_Push_on_Tag
+                      spec:
+                        connectorRef: Plugins_Docker_Hub_Connector
+                        image: plugins/docker
+                        settings:
+                          username: <+secrets.getValue("harnesssecureusername")>
+                          password: <+secrets.getValue("dockerHarnessSecurePwd")>
+                          repo: harnesssecure/github-actions
+                          dockerfile: rf-plugins/github-actions/docker/Dockerfile.linux.arm64.hhi
+                          auto_tag: "true"
+                          auto_tag_suffix: linux-arm64
+                          base_image_username: <+secrets.getValue("harness0HARUsername")>
+                          base_image_password: <+secrets.getValue("harness0HARPAT")>
+                          base_image_registry: harness0.harness.io/oci/docker_artifacts
+                      when:
+                        stageStatus: Success
+                        condition: <+codebase.build.type> == "tag"
+                  - step:
+                      type: BuildAndPushDockerRegistry
+                      name: HHI Build and Push on Branch
+                      identifier: RF_Build_and_Push_on_Branch
+                      spec:
+                        connectorRef: harnesssecure
+                        repo: harnesssecure/github-actions
+                        tags:
+                          - linux-arm64
+                        caching: false
+                        dockerfile: rf-plugins/github-actions/docker/Dockerfile.linux.arm64.hhi
+                        envVariables:
+                          PLUGIN_BASE_IMAGE_USERNAME: <+secrets.getValue("harness0HARUsername")>
+                          PLUGIN_BASE_IMAGE_PASSWORD: <+secrets.getValue("harness0HARPAT")>
+                          PLUGIN_BASE_IMAGE_REGISTRY: harness0.harness.io/oci/docker_artifacts
+                      when:
+                        stageStatus: Success
+                        condition: <+codebase.build.type> == "branch"
+              buildIntelligence:
+                enabled: true
     - stage:
         name: Manifest
         identifier: Manifest
